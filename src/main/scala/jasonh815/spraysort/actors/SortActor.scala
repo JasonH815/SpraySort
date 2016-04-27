@@ -12,6 +12,7 @@ class SortActor extends Actor {
 
   override def receive: Receive = {
     case msg:SortMessage =>
+      println("Sorting on thread: " + Thread.currentThread().getName)
       Thread.sleep(3000) // 3 second delay
       publisher ! SortMessage(msg.data.sorted)
   }
