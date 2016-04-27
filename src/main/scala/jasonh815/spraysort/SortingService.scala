@@ -63,27 +63,29 @@ trait SortingService extends HttpService with SprayJsonSupport {
     } ~
     pathPrefix("sort") {
       pathPrefix("akka") {
-        pathEnd {
-          post {
-            entity(as[SortMessage]) { msg =>
-              actorRefFactory.actorOf(SortActor.props) ! msg
-              complete {
-                "received: " + msg
-              }
-            }
-          }
-        } ~
-        pathPrefix("random" / IntNumber) { count =>
+        pathPrefix("local") {
           pathEnd {
             post {
-              val data = generateRandomData(count)
-              actorRefFactory.actorOf(SortActor.props) ! data
-              complete {
-                "sorting " + count + " numbers."
+              entity(as[SortMessage]) { msg =>
+                actorRefFactory.actorOf(SortActor.props) ! msg
+                complete {
+                  "received: " + msg
+                }
               }
             }
-          }
-        } ~
+          } ~
+            pathPrefix("random" / IntNumber) { count =>
+              pathEnd {
+                post {
+                  val data = generateRandomData(count)
+                  actorRefFactory.actorOf(SortActor.props) ! data
+                  complete {
+                    "sorting " + count + " numbers."
+                  }
+                }
+              }
+            }
+        }~
         pathPrefix("remote") {
           val remote = actorRefFactory.actorSelection("akka.tcp://actorSystemName@10.0.0.1:2552/user/actorName")
           pathEnd {
