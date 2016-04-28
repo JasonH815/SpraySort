@@ -1,4 +1,4 @@
-package jasonh815.spraysort.actors
+package jasonh815.akkasort.actors
 
 import akka.actor.{Actor, Props}
 
@@ -10,10 +10,10 @@ class SortActor extends Actor {
   val publisher = context.actorOf(PublishActor.props)
 
   override def receive: Receive = {
-    case msg:SortMessage =>
+    case msg:AkkaSortMessage =>
       println("Sorting on thread: " + Thread.currentThread().getName)
       Thread.sleep(3000) // 3 second delay
-      publisher ! SortMessage(msg.data.sorted)
+      publisher ! AkkaSortMessage(msg.data.sorted)
   }
 }
 

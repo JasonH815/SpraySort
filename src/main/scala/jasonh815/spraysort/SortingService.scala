@@ -4,17 +4,19 @@ import akka.actor.Actor
 import spray.routing._
 import spray.http._
 import MediaTypes._
-import jasonh815.spraysort.actors.SortActor
+import jasonh815.akkasort.actors.AkkaSortMessage
+import jasonh815.spraysort.actors.{SortActor, SortMessage}
 import spray.httpx.SprayJsonSupport
 import spray.json.{CompactPrinter, DefaultJsonProtocol}
 
 import scala.language.postfixOps
 import scala.util.Random
 
-case class SortMessage(data: Seq[Int])
+
 
 object SortMessageProtocol extends DefaultJsonProtocol {
   implicit val sortMessageFormat = jsonFormat1(SortMessage)
+  implicit val akkaSortMessageFormat = jsonFormat1(AkkaSortMessage)
 }
 
 
@@ -32,10 +34,6 @@ class SortingServiceActor extends Actor with SortingService {
   def receive = runRoute(myRoute)
 
   val akkaSorter = actorRefFactory.actorOf(SortActor.props)
-
-
-
-
 }
 
 
@@ -87,10 +85,10 @@ trait SortingService extends HttpService with SprayJsonSupport {
             }
         }~
         pathPrefix("remote") {
-          val remote = actorRefFactory.actorSelection("akka.tcp://actorSystemName@10.0.0.1:2552/user/actorName")
+          val remote = actorRefFactory.actorSelection("akka.tcp://AkkaSortActorSystem@127.0.0.1:2556/user/sortActor")
           pathEnd {
             post {
-              entity(as[SortMessage]) { msg =>
+              entity(as[AkkaSortMessage]) { msg =>
                 remote ! msg
                 complete {
                   "received: " + msg
@@ -101,8 +99,8 @@ trait SortingService extends HttpService with SprayJsonSupport {
           pathPrefix("random" / IntNumber) { count =>
             pathEnd {
               post {
-                val data = generateRandomData(count)
-                remote ! data
+                val msg = generateRandomData(count)
+                remote ! AkkaSortMessage(msg.data)
                 complete {
                   "sorting " + count + " numbers."
                 }
@@ -112,6 +110,7 @@ trait SortingService extends HttpService with SprayJsonSupport {
         }
       } ~
       path("mq") {
+        import SortMessageProtocol._
         get {
           complete {
             SortMessage(Seq(1, 2, 3))
